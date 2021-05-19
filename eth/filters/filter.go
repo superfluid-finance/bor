@@ -20,7 +20,8 @@ import (
 	"context"
 	"errors"
 	"math/big"
-
+	
+	//"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
@@ -121,6 +122,7 @@ func newFilter(backend Backend, addresses []common.Address, topics [][]common.Ha
 // Logs searches the blockchain for matching log entries, returning all from the
 // first block that contains matches, updating the start of the filter accordingly.
 func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
+	//log.Info("!! eth.filters.Logs 1");
 	// If we're doing singleton block filtering, execute and return
 	if f.block != (common.Hash{}) {
 		header, err := f.backend.HeaderByHash(ctx, f.block)
@@ -130,14 +132,17 @@ func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
 		if header == nil {
 			return nil, errors.New("unknown block")
 		}
+		//log.Info("!! eth.filters.Logs 2");
 		return f.blockLogs(ctx, header)
 	}
+	//log.Info("!! eth.filters.Logs 3");
 	// Figure out the limits of the filter range
 	header, _ := f.backend.HeaderByNumber(ctx, rpc.LatestBlockNumber)
 	if header == nil {
 		return nil, nil
 	}
 	head := header.Number.Uint64()
+	//log.Info("!! eth.filters.Logs 4");
 
 	if f.begin == -1 {
 		f.begin = int64(head)
@@ -151,7 +156,9 @@ func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
 		logs []*types.Log
 		err  error
 	)
+	//log.Info("!! eth.filters.Logs 5");
 	size, sections := f.backend.BloomStatus()
+	//log.Info("!! eth.filters.Logs 5.1", size, sections)
 	if indexed := sections * size; indexed > uint64(f.begin) {
 		if indexed > end {
 			logs, err = f.indexedLogs(ctx, end)
@@ -162,8 +169,10 @@ func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
 			return logs, err
 		}
 	}
+	//log.Info("!! eth.filters.Logs 6");
 	rest, err := f.unindexedLogs(ctx, end)
 	logs = append(logs, rest...)
+	//log.Info("!! eth.filters.Logs 7");
 	return logs, err
 }
 

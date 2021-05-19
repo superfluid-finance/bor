@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	//"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -339,16 +340,20 @@ func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit FilterCriteria) ([
 	}
 
 	// get sprint from bor config
-	sprint := api.chainConfig.Bor.Sprint
+	//sprint := api.chainConfig.Bor.Sprint
+	//log.Info("!! GetLogs 1")
 
 	var filter *Filter
-	var borLogsFilter *BorBlockLogsFilter
+	//var borLogsFilter *BorBlockLogsFilter
 	if crit.BlockHash != nil {
+		//log.Info("!! GetLogs 1.1")
 		// Block filter requested, construct a single-shot filter
 		filter = NewBlockFilter(api.backend, *crit.BlockHash, crit.Addresses, crit.Topics)
 		// Block bor filter
-		borLogsFilter = NewBorBlockLogsFilter(api.backend, sprint, *crit.BlockHash, crit.Addresses, crit.Topics)
+		// FIXME HACK: disable bor logs since it slows down the getLogs performance
+		// borLogsFilter = NewBorBlockLogsFilter(api.backend, sprint, *crit.BlockHash, crit.Addresses, crit.Topics)
 	} else {
+		//log.Info("!! GetLogs 1.2.1")
 		// Convert the RPC block numbers into internal representations
 		begin := rpc.LatestBlockNumber.Int64()
 		if crit.FromBlock != nil {
@@ -361,8 +366,11 @@ func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit FilterCriteria) ([
 		// Construct the range filter
 		filter = NewRangeFilter(api.backend, begin, end, crit.Addresses, crit.Topics)
 		// Block bor filter
-		borLogsFilter = NewBorBlockLogsRangeFilter(api.backend, sprint, begin, end, crit.Addresses, crit.Topics)
+		// FIXME HACK: disable bor logs since it slows down the getLogs performance
+		// borLogsFilter = NewBorBlockLogsRangeFilter(api.backend, sprint, begin, end, crit.Addresses, crit.Topics)
+		//log.Info("!! GetLogs 1.2.2")
 	}
+	//log.Info("!! GetLogs 2");
 
 	// Run the filter and return all the logs
 	logs, err := filter.Logs(ctx)
@@ -370,13 +378,16 @@ func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit FilterCriteria) ([
 		return nil, err
 	}
 	// Run the filter and return all the logs
-	borBlockLogs, err := borLogsFilter.Logs(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// borBlockLogs, err := borLogsFilter.Logs(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	//log.Info("!! GetLogs 3", logs);
 
 	// merge bor block logs and receipt logs and return it
-	return returnLogs(types.MergeBorLogs(logs, borBlockLogs)), err
+	//return returnLogs(types.MergeBorLogs(logs, borBlockLogs)), err
+	return returnLogs(logs), err
 }
 
 // UninstallFilter removes the filter with the given filter id.
